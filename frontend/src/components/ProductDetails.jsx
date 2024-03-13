@@ -1,12 +1,18 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useContext } from 'react';
 import { useParams } from 'react-router-dom';
 import axios from 'axios';
+import { CartContext } from '../context/cart';
+import {toast} from 'react-toastify'
+import 'react-toastify/dist/ReactToastify.css';
 
-const ProductDetails = ({ addToCart }) => {
+const ProductDetails = () => {
   const { id } = useParams();
   const [product, setProduct] = useState(null);
+  const [quantity, setQuantity] = useState(1)
+  const cart = useContext(CartContext)
+  console.log(cart)
 
-  useEffect(() => {
+  useEffect(() => {  
     const fetchProduct = async () => {
       try {
         const response = await axios.get(`http://localhost:5000/api/products/${id}`);
@@ -16,18 +22,40 @@ const ProductDetails = ({ addToCart }) => {
       }
     };
     fetchProduct();
-  }, [id]);
+  }, [id]); 
 
+  const addToCart = ()=> {
+    cart.setItems([...cart.items, {name:product.name, price:product.price, quantity}])
+    toast.success('Added to cart successfully',{ autoClose: 1000 });
+    setQuantity((prevQuantity)=> prevQuantity+1)
+  }
+
+  const manageQuantity = (e)=> {
+    setQuantity(parseInt(e.target.value))
+  }
 
   return (
     <div className="container mx-auto py-4">
       {product ? (
-        <div className="max-w-md mx-auto bg-white shadow-lg rounded-lg overflow-hidden">
-          <div className="p-4">
+        <div className="max-w-md mx-auto bg-white shadow-lg rounded-lg overflow-hidden ">
+          <div className="p-4 ">
+            <img className='items-center' src={product.imageUrl} alt="ImageUrl" />
             <h2 className="text-2xl font-bold mb-2">{product.name}</h2>
             <p className="text-gray-600 mb-2">Description: {product.description}</p>
             <p className="text-gray-800 font-bold">Price: Rs {product.price}</p>
-            <button onClick={() => addToCart(product)} 
+            <label htmlFor="quantity" className="block text-gray-700 font-bold mb-2">
+              Quantity:
+            </label>
+            <input
+              type="number"
+              id="quantity"
+              name="quantity"
+              min="1"
+              value={quantity}
+              onChange={manageQuantity}
+              className="w-full px-3 py-2 border rounded mb-3"
+            />
+            <button onClick={addToCart} 
               className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded mt-4">
               Add to Cart
             </button>

@@ -1,54 +1,57 @@
-import React, { useState, useEffect } from 'react';
-import axios from 'axios';
+import React, { useContext } from 'react';
+import { CartContext } from '../context/cart';
 
 const ShoppingCart = () => {
-  const [cartItems, setCartItems] = useState([]);
-
-  useEffect(() => {
-    const fetchCartItems = async () => {
-      try {
-        const response = await axios.get('http://localhost:5000/api/cart');
-        setCartItems(response.data);
-      } catch (error) {
-        console.error('Error fetching cart items:', error);
-      }
-    };
-    fetchCartItems();
-  }, []);
-
-  const handleRemoveItem = async (itemId) => {
-    try {
-      await axios.delete(`/api/cart/${itemId}`);
-      setCartItems(cartItems.filter(item => item._id !== itemId));
-    } catch (error) {
-      console.error('Error removing item from cart:', error);
-    }
-  };
-
-  const renderCartItems = () => {
-    return cartItems.map(item => (
-      <div key={item._id}>
-        <p>{item.name}</p>
-        <p>Quantity: {item.quantity}</p>
-        <p>Price: Rs {item.price}</p>
-        <button onClick={() => handleRemoveItem(item._id)}>Remove</button>
-      </div>
-    ));
-  };
+  const cart = useContext(CartContext);
+  const total = cart.items.reduce((acc, item) => {
+    return acc + item.price;
+  }, 0);
 
   return (
-    <div>
-      <h2>Shopping Cart</h2>
-      {cartItems.length === 0 ? (
-        <p>Your shopping cart is empty</p>
+    <div className="container mx-auto py-4">
+      <h2 className="text-2xl font-bold mb-4">Shopping Cart</h2>
+      {cart.items.length > 0 ? (
+        <div className="overflow-x-auto">
+          <table className="min-w-full divide-y divide-gray-200">
+            <thead className="bg-gray-50">
+              <tr>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Item
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Quantity
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Price
+                </th>
+              </tr>
+            </thead>
+            <tbody className="bg-white divide-y divide-gray-200">
+              {cart.items.map((item, index) => (
+                <tr key={index}>
+                  <td className="px-6 py-4 whitespace-nowrap">
+                    <div className="text-lg">{item.name}</div>
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap text-lg font-bold">
+                    {item.quantity}
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap text-lg font-bold">
+                    Rs {item.price}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
       ) : (
-        renderCartItems()
+        <p className="text-lg">Your cart is empty</p>
       )}
+      <div className="flex justify-between items-center mt-4">
+        <span className="text-xl font-bold">Total Amount:</span>
+        <span className="text-xl font-bold">Rs {total}</span>
+      </div>
     </div>
   );
 };
 
 export default ShoppingCart;
-
-
-

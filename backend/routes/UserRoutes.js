@@ -1,6 +1,8 @@
 const express = require('express');
 const router = express.Router();
 const User = require('../models/User');
+const bcrypt = require('bcrypt')
+const jwt = require('jsonwebtoken')
 
 // GET all users
 router.get('/', async (req, res) => {
@@ -18,16 +20,21 @@ router.get('/:id', getUser, (req, res) => {
 });
 
 // Create a new user
-router.post('/', async (req, res) => {
-  const user = new User({
-    username: req.body.username,
-    email: req.body.email,
-    password: req.body.password,
-    address: req.body.address,
-    phoneNumber: req.body.phoneNumber
-  });
-
+router.post('/register', async (req, res) => {
+  const {username, email, password} = req.body
   try {
+    
+    const existingUser = await User.findOne({email})
+    if(existingUser){
+      return res.status(400).json({message: 'Email already exists'})
+    }
+    const hashedPassword = await bcrypt.hash(password, 10)
+    const user = new User({
+      username,
+      email,
+      password: hashedPassword,
+      cart: [] //empty cart
+    });
     const newUser = await user.save();
     res.status(201).json(newUser);
   } catch (err) {
@@ -35,30 +42,6 @@ router.post('/', async (req, res) => {
   }
 });
 
-// Update a user
-router.patch('/:id', getUser, async (req, res) => {
-  if (req.body.username != null) {
-    res.user.username = req.body.username;
-  }
-  if (req.body.email != null) {
-    res.user.email = req.body.email;
-  }
-  if (req.body.password != null) {
-    res.user.password = req.body.password;
-  }
-  if (req.body.address != null) {
-    res.user.address = req.body.address;
-  }
-  if (req.body.phoneNumber != null) {
-    res.user.phoneNumber = req.body.phoneNumber;
-  }
-  try {
-    const updatedUser = await res.user.save();
-    res.json(updatedUser);
-  } catch (err) {
-    res.status(400).json({ message: err.message });
-  }
-});
 
 // Delete a user
 router.delete('/:id', getUser, async (req, res) => {
@@ -84,5 +67,31 @@ async function getUser(req, res, next) {
   res.user = user;
   next();
 }
+
+
+//login user
+router.post('/login', async (req,res)=> {
+  const {email, password} = req.body;
+  try{
+    const user = await User.findOne({email})
+    if(!user){
+      return res.status(404).json({message:'User not found'})
+    }
+    const isPasswordMatch = await bcrypt.compare(password, user.password)
+    if(!isPasswordMatch){
+      return res.status(401).json({message: 'Invalid password'})
+    }
+
+    //Generate a token
+     
+    const token = jwt.sign({userId: user._id ,email:user.email}, 'secret-key' ,{expiresIn: '1h'})
+    //Return token
+    res.status(200).json({token})
+
+  }
+  catch(error){
+    res.status(500).json({message: 'Internal server error'})
+  }
+})
 
 module.exports = router;
