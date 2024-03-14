@@ -9,8 +9,8 @@ const ProductDetails = () => {
   const { id } = useParams();
   const [product, setProduct] = useState(null);
   const [quantity, setQuantity] = useState(1)
-  const cart = useContext(CartContext)
-  console.log(cart)
+  // const cart = useContext(CartContext)
+  // console.log(cart)
 
   useEffect(() => {  
     const fetchProduct = async () => {
@@ -24,15 +24,29 @@ const ProductDetails = () => {
     fetchProduct();
   }, [id]); 
 
-  const addToCart = ()=> {
-    cart.setItems([...cart.items, {name:product.name, price:product.price, quantity}])
-    toast.success('Added to cart successfully',{ autoClose: 1000 });
-    setQuantity((prevQuantity)=> prevQuantity+1)
+  // const addToCart = ()=> {
+  //   cart.setItems([...cart.items, {name:product.name, price:product.price, quantity}])
+  //   toast.success('Added to cart successfully',{ autoClose: 1000 });
+  //   setQuantity((prevQuantity)=> prevQuantity+1)
+  // }
+
+  const addItemsToCart = async ()=> {
+    try{
+      if(quantity < 1 || quantity==""){
+        alert('Add quantity to proceed')
+      }
+      await axios.post('http://localhost:5000/api/cart/add', {product, quantity})
+      toast.success('Added to cart successfully',{ autoClose: 1000 });
+      console.log("Items added to cart successfullly")
+    }
+    catch(error){
+      console.log('Error adding items to cart', )
+    }
   }
 
-  const manageQuantity = (e)=> {
-    setQuantity(parseInt(e.target.value))
-  }
+  // const manageQuantity = (e)=> {
+  //   setQuantity(parseInt(e.target.value))
+  // }
 
   return (
     <div className="container mx-auto py-4">
@@ -51,11 +65,11 @@ const ProductDetails = () => {
               id="quantity"
               name="quantity"
               min="1"
-              value={quantity}
-              onChange={manageQuantity}
+              // value={quantity}
+              onChange={(e)=> setQuantity(e.target.value)}
               className="w-full px-3 py-2 border rounded mb-3"
             />
-            <button onClick={addToCart} 
+            <button onClick={addItemsToCart} 
               className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded mt-4">
               Add to Cart
             </button>
